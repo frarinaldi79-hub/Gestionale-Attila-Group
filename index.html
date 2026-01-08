@@ -1,0 +1,1315 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ATTILA GROUP - Gestionale V76.2</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <style>
+        :root { --primary: #000000; --gold: #c59d25; --bg: #f4f4f9; }
+        
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            background: var(--bg); margin: 0; padding: 0; color: #333; padding-bottom: 150px; 
+        }
+        
+        /* HEADER APP */
+        .app-header { background-color: #000; color: #fff; padding: 15px; text-align: center; border-bottom: 4px solid var(--gold); position:sticky; top:0; z-index:1000; }
+        
+        /* MENU TABS */
+        .nav-menu { display: flex; justify-content: center; margin-top: 10px; gap: 10px; }
+        .nav-btn {
+            background: #333; color: #fff; border: 1px solid var(--gold); 
+            padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; text-transform: uppercase;
+            flex: 1; max-width: 200px;
+        }
+        .nav-btn.active { background: var(--gold); color: #000; }
+
+        /* UPLOAD BAR */
+        .upload-bar { background: #222; padding: 10px; text-align: center; color: #fff; font-size: 0.9em; }
+        .upload-bar input { width: auto; display: inline-block; margin: 0 5px; }
+
+        /* VISTE */
+        .view-section { display: none; } 
+        .view-section.active { display: block; animation: fadeIn 0.5s; } 
+        @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+
+        .container { max-width: 900px; margin: 15px auto; padding: 0 10px; }
+        .card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 15px; border: 1px solid #ddd; }
+        
+        /* GRIGLIE */
+        .row-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; align-items: end; }
+        .row-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; align-items: end; }
+        .row-grid-4 { display: grid; grid-template-columns: 0.5fr 1fr 0.5fr 1fr; gap: 5px; align-items: end; }
+        @media(max-width: 600px) { .row-grid, .row-grid-3, .row-grid-4 { grid-template-columns: 1fr; } }
+        
+        label { display: block; font-weight: 600; font-size: 0.9em; margin-bottom: 5px; color: #555; }
+        
+        /* INPUT */
+        input:not([type="checkbox"]), select, textarea { 
+            width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 4px; 
+            font-size: 16px !important; background-color: #fff; 
+            appearance: none; -webkit-appearance: none; 
+        }
+        input[type="checkbox"] { width: 25px; height: 25px; margin: 0; cursor: pointer; vertical-align: middle; }
+        input:focus, select:focus { border-color: var(--gold); outline: none; }
+
+        /* PULSANTI */
+        .btn { 
+            width: 100%; padding: 15px; background: #000; color: var(--gold); 
+            border: 2px solid var(--gold); border-radius: 6px; font-size: 1rem; 
+            cursor: pointer; font-weight: bold; margin-top: 10px; 
+            text-transform: uppercase; touch-action: manipulation;
+        }
+        .btn:active { background: #333; transform: scale(0.98); }
+        .btn.secondary { background: #6c757d; color: white; border-color: #6c757d; }
+        .btn.tech { background: #0056b3; color: white; border-color: #004494; } 
+        .btn.posa { background: #28a745; color: white; border-color: #28a745; }
+        .btn.preview-jpg { background: #e0a800; color: white; border-color: #d39e00; }
+        .btn.signature-btn { background: #fff; color: #000; border: 2px dashed #000; margin-top: 5px; }
+        .btn.delete { background: #dc3545; color: white; border: none; font-size: 0.9em; padding: 8px; width: auto; float: right; text-transform: none; margin-bottom: 5px; }
+        .btn.small-add { padding: 8px; font-size: 0.9rem; margin-top: 5px; width: auto; }
+        .btn.duplicate { background: #17a2b8; color: white; border: none; font-size: 0.9em; padding: 8px; width: auto; float: right; text-transform: none; margin-bottom: 5px; margin-right: 5px; }
+
+        .btn-whatsapp { background-color: #25D366; color: white; border: none; margin-top: 10px; }
+        .btn-email { background-color: #007bff; color: white; border: none; margin-top: 10px; }
+        .action-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
+
+        /* MODALE FIRMA */
+        .signature-modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255,255,255,0.98); z-index: 9999; flex-direction: column;
+            justify-content: center; align-items: center; padding: 20px;
+        }
+        .signature-canvas-container { border: 2px solid #000; background: #fff; width: 100%; max-width: 600px; height: 60vh; }
+        canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: crosshair; }
+        .signature-preview { width: 100%; height: 80px; border: 1px solid #eee; background: #f9f9f9; margin-top: 5px; object-fit: contain; display: none; }
+        .signature-preview.visible { display: block; }
+
+        /* BOX ANTEPRIMA LIVE */
+        #liveTotalsBox { display: none; background: #fffdf0; border: 2px solid var(--gold); padding: 15px; margin-top: 15px; border-radius: 8px; }
+        .live-row { display: flex; justify-content: space-between; font-size: 1.1em; margin-bottom: 5px; border-bottom: 1px dashed #ccc; padding-bottom: 5px; }
+        .live-total { font-size: 1.4em; font-weight: bold; color: #000; margin-top: 10px; border-top: 2px solid #000; padding-top: 10px; text-align: center; }
+
+        /* SEZIONE PROFITTO INTERNO */
+        .profit-section { margin-top: 15px; padding-top: 10px; border-top: 2px dashed #000; background-color: #f4f4f4; padding: 15px; border-radius: 5px; font-size: 0.9em; border: 1px solid #ccc; }
+        .profit-row { display: flex; justify-content: space-between; margin-bottom: 3px; color: #555; }
+        .profit-row.subtotal { border-top: 1px dotted #999; margin-top: 5px; padding-top: 5px; font-weight: bold; color: #333; }
+        .profit-result { font-weight: bold; font-size: 1.3em; text-align: center; margin-top: 10px; border-top: 2px solid #333; padding-top: 10px; background: #fff; padding: 10px; border-radius: 4px;}
+
+        /* UTILITA' VARIE */
+        .window-item { border-left: 5px solid var(--gold); background: #fff; padding: 15px; margin-bottom: 15px; border-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .posa-item { border-left: 5px solid #28a745; background: #f0fff4; padding: 10px; margin-bottom: 10px; border-radius: 4px; }
+        .checkbox-wrapper { display: flex; align-items: center; gap: 10px; margin-top: 5px; background: #f8f9fa; padding: 10px; border-radius: 4px; }
+        .config-section { background-color: #f8f9fa; border: 1px solid #e9ecef; padding: 15px; border-radius: 5px; margin-top: 20px; }
+        .discount-wrapper { background-color: #d4edda; padding: 15px; border-radius: 5px; border: 1px solid #c3e6cb; margin-top: 20px; }
+        #loadingBar { display: none; background: #fffae6; padding: 15px; text-align: center; border: 2px solid #ffeeba; position: fixed; bottom: 20px; left: 5%; right: 5%; z-index: 10000; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); font-weight: bold; color: #856404; }
+
+        /* RENDER PDF (Nascosti) */
+        #preventivoContainer, #schedaTecnicaContainer, #posaContainer { display: none; }
+        
+        /* MODIFICA V76: Padding ridotto per massimizzare area di stampa A4 
+           larghezza fissa a 1000px per alta risoluzione, poi scalata in PDF
+        */
+        #renderArea, #techRenderArea, #posaRenderArea { 
+            background: white; 
+            padding: 30px; 
+            padding-bottom: 50px; 
+            color: #000; 
+            border: 1px solid #ccc; 
+            width: 1000px; /* Larghezza fissa per risoluzione alta */
+            margin: 0 auto; 
+            box-sizing: border-box; 
+        }
+        
+        .out-header { display: flex; justify-content: space-between; border-bottom: 3px solid var(--gold); padding-bottom: 20px; margin-bottom: 20px; }
+        .out-logo { width: 180px; height: auto; object-fit: contain; }
+        .out-table { width: 100%; border-collapse: collapse; margin-top: 25px; font-size: 0.95em; }
+        .out-table th, .out-table td { border: 1px solid #ddd; padding: 12px; vertical-align: top; }
+        .out-table th { background-color: #000; color: var(--gold); text-align: center; }
+        
+        /* BANNER SOLO FORNITURA */
+        .supply-banner {
+            display: none;
+            background-color: #d32f2f;
+            color: white;
+            text-align: center;
+            padding: 10px;
+            font-weight: bold;
+            font-size: 1.2em;
+            border: 2px solid #000;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+        }
+
+        .text-right { text-align: right; }
+        .text-center { text-align: center; }
+        .cost-list { list-style: none; padding: 0; margin: 5px 0 0 0; font-size: 0.85em; color: #444; }
+        .cost-list li { display: flex; justify-content: space-between; border-bottom: 1px dotted #eee; padding: 3px 0; }
+        
+        /* BOX TOTALI */
+        .total-box { margin-top: 40px; float: right; width: 50%; } 
+        .total-row { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            padding: 5px 0; 
+            border-bottom: 1px solid #eee; 
+            font-size: 1.1em; 
+        }
+        .total-row span:last-child { white-space: nowrap; }
+        .total-row.imponibile { 
+            margin-top: 25px; 
+            padding-top: 10px; 
+            border-top: 2px solid #333; 
+            font-weight: 800; 
+            font-size: 1.3em; 
+            background-color: #f9f9f9; 
+        }
+        .grand-total { font-weight: 900; font-size: 1.6em; border-top: 4px solid var(--gold); padding-top: 15px; margin-top: 15px; background-color: #fffdf0; padding: 10px; }
+        
+        .signature-print-container { margin-top: 60px; display: flex; justify-content: center; gap: 80px; align-items: flex-end; page-break-inside: avoid; }
+        .signature-box { text-align: center; width: 250px; }
+        .signature-line { border-top: 1px solid #000; margin-top: 5px; padding-top: 5px; font-weight: bold; font-size: 0.9em; }
+
+        /* GRAFICA NOTE */
+        .installer-notes-box { 
+            clear: both; margin-top: 40px; 
+            background-color: #fffdf5; 
+            border-left: 6px solid var(--gold); 
+            padding: 15px 20px; 
+            border-radius: 0 6px 6px 0;
+            display: none; 
+            box-shadow: 2px 2px 10px rgba(0,0,0,0.03);
+        }
+        .note-header { font-weight: bold; color: #000; text-transform: uppercase; margin-bottom: 8px; font-size: 1.1em; display:flex; align-items:center; }
+        
+        /* GRAFICA PAGAMENTI */
+        .payment-container { margin-top: 40px; border: 2px solid #000; border-radius: 6px; overflow: hidden; page-break-inside: avoid; }
+        .payment-header { background: #000; color: var(--gold); padding: 10px; text-align: center; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; font-size: 1.1em; }
+        .payment-steps { display: flex; width: 100%; background: #fff; }
+        .pay-step { flex: 1; padding: 15px 10px; text-align: center; border-right: 1px solid #ddd; display: flex; flex-direction: column; justify-content: center; }
+        .pay-step:last-child { border-right: none; }
+        .pay-perc { display: block; font-size: 1.6em; font-weight: 900; color: #000; margin-bottom: 5px; }
+        .pay-label { font-size: 0.85em; text-transform: uppercase; font-weight: bold; color: #666; margin-bottom: 5px; letter-spacing: 0.5px; }
+        .pay-desc { font-size: 0.85em; color: #333; line-height: 1.3; }
+
+        /* SCHEDA TECNICA */
+        .tech-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
+        .tech-card { border: 2px solid #000; background: #fff; page-break-inside: avoid; }
+        .tech-card-header { background-color: #000; color: var(--gold); padding: 8px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
+        .tech-measures-row { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid #ccc; }
+        .measure-box { padding: 10px; text-align: center; }
+        .measure-box.rilievo { background: #f2f2f2; border-right: 1px solid #ccc; }
+        .measure-box.produzione { background: #fff5f5; color: #d00000; }
+        .measure-val { display: block; font-size: 1.4em; font-weight: 800; }
+        .measure-lbl { font-size: 0.7em; text-transform: uppercase; color: #666; letter-spacing: 1px; }
+        .tech-drawing-area { height: 160px; background: #fff; display: flex; justify-content: center; align-items: center; border-bottom: 1px solid #000; position: relative; padding: 10px; }
+        .tech-info-table { width: 100%; border-collapse: collapse; font-size: 0.9em; }
+        .tech-info-table td { padding: 6px 8px; border-bottom: 1px solid #eee; }
+        .schematic-window { border: 3px solid #000; background: #fff; display: flex; position: relative; }
+        .schematic-sash { flex: 1; border-right: 1px solid #000; position: relative; overflow: hidden; }
+        .schematic-sash:last-child { border-right: none; }
+        .arrow-svg { position: absolute; top:0; left:0; width:100%; height:100%; pointer-events: none; }
+        .arrow-line { stroke: #000; stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+        .tech-traverso { position: absolute; left: 0; width: 100%; height: 6px; background-color: #222; z-index: 5; border-top: 1px solid #fff; border-bottom: 1px solid #fff; }
+
+        /* POSA */
+        .posa-header-box { border: 2px solid #000; padding: 10px; text-align: center; margin-bottom: 20px; background: #f9f9f9; }
+        .posa-header-title { font-weight: bold; font-size: 1.2em; text-transform: uppercase; }
+        .posa-section-title { background: #eee; padding: 5px 10px; font-weight: bold; border: 1px solid #000; margin-top: 15px; }
+        .posa-field-row { display: flex; border-left: 1px solid #000; border-right: 1px solid #000; border-bottom: 1px solid #000; }
+        .posa-field-label { width: 30%; padding: 8px; background: #fdfdfd; border-right: 1px solid #ccc; font-weight: bold; font-size: 0.9em; }
+        .posa-field-value { width: 70%; padding: 8px; font-weight: 500; }
+        .posa-declaration-text { font-size: 0.9em; text-align: justify; padding: 10px; border: 1px solid #000; margin-top: 10px; background: #fff; }
+        .posa-tech-details { margin-top: 20px; border: 1px solid #000; font-size: 0.9em; }
+        .posa-tech-details td { padding: 8px; border: 1px solid #ccc; vertical-align: top; }
+        
+        #finalImageArea { display: none; margin-top: 30px; text-align: center; padding-top: 20px; padding-bottom: 50px;}
+        .success-box { background: #e8f5e9; border: 2px solid #4caf50; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
+        .disclaimer-box { margin-top:20px; font-size:0.8em; display:none; background:#f9f9f9; padding:15px; border-left:4px solid #666; line-height: 1.4; color: #444; }
+        .client-info-box { border: 1px solid #ddd; padding: 10px; background-color: #fdfdfd; margin-bottom: 20px; font-size: 0.95em; }
+
+        /* TOOLBAR ANTEPRIMA */
+        #previewToolbar {
+            background: #333; color: white; padding: 15px; border-radius: 8px; margin-bottom: 20px;
+            display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            position: sticky; top: 10px; z-index: 2000;
+        }
+    </style>
+</head>
+<body>
+
+    <script>
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyZD0AWxVV8jnOpIHr-yaGrnfK5KhH2U0AtlCdt7eVlZSyYempEXGZCK-jUmJmkVYKr/exec"; 
+        
+        function showTab(viewId, btn) {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(viewId).classList.add('active');
+            btn.classList.add('active');
+        }
+
+        function tornaAllaModifica() {
+            document.getElementById('finalImageArea').style.display = 'none';
+            document.getElementById('view-preventivo').style.display = 'block';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+        
+        function chiudiAnteprima() {
+            document.getElementById('preventivoContainer').style.display = 'none';
+            document.getElementById('view-preventivo').style.display = 'block';
+        }
+
+        function apriMaps() {
+            const dest = document.getElementById('indirizzoCantiere').value;
+            if(!dest) { alert("Inserisci prima l'indirizzo del cantiere."); return; }
+            const origin = "Via 2 Giugno 9, Limbiate";
+            const url = `https://www.google.com/maps/dir/${encodeURIComponent(origin)}/${encodeURIComponent(dest)}`;
+            window.open(url, '_blank');
+        }
+    </script>
+
+    <div id="signatureModal" class="signature-modal">
+        <h3 id="signatureTitle">Firma Qui</h3>
+        <div class="signature-canvas-container">
+            <canvas id="fullscreenCanvas"></canvas>
+        </div>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; width:100%; max-width:600px; margin-top:15px;">
+            <button class="btn secondary" onclick="closeSignatureModal()">ANNULLA</button>
+            <button class="btn" onclick="saveSignature()">SALVA FIRMA</button>
+        </div>
+        <button class="btn delete" onclick="clearModalCanvas()" style="width:100%; max-width:600px; margin-top:10px;">PULISCI</button>
+    </div>
+
+    <div class="app-header">
+        <h1 style="color:var(--gold); margin:0; font-size: 1.5rem;">ATTILA GROUP</h1>
+        <div style="font-size: 0.9rem;">Gestionale V76.2</div>
+        <div class="nav-menu">
+            <button class="nav-btn active" onclick="showTab('view-preventivo', this)">📝 Preventivo</button>
+            <button class="nav-btn" onclick="showTab('view-posa', this)">✅ Verbale Posa</button>
+        </div>
+    </div>
+
+    <div class="upload-bar">
+        <span>📍 Carica Logo:</span> <input type="file" id="inputLogo" accept="image/*">
+        <span style="margin-left:15px;">✒️ Timbro Posa:</span> <input type="file" id="inputTimbro" accept="image/*">
+    </div>
+
+    <div class="container">
+        
+        <div id="view-preventivo" class="view-section active">
+            <div class="card">
+                <h3>📂 Dati Cliente & Preventivo</h3>
+                <div class="row-grid">
+                    <div><label>Cliente</label><input type="text" id="cliente" placeholder="Nome Cognome / Rag. Sociale"></div>
+                    <div><label>Telefono</label><input type="tel" id="telCliente" placeholder="Tel..."></div>
+                </div>
+                <div class="row-grid">
+                    <div><label>Email</label><input type="email" id="emailCliente" placeholder="email@esempio.com"></div>
+                    <div>
+                        <label>Tipo Preventivo</label>
+                        <select id="modalitaPreventivo" onchange="toggleModalita()">
+                            <option value="fornitura_posa">Fornitura + Posa</option>
+                            <option value="solo_fornitura">Solo Fornitura</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="row-grid">
+                    <div><label>Residenza / Sede Legale</label><input type="text" id="indirizzoResidenza" placeholder="Via, Città..."></div>
+                    <div><label>Cantiere / Destinazione</label><input type="text" id="indirizzoCantiere" placeholder="Se diverso da residenza..."></div>
+                </div>
+                <div class="row-grid-3">
+                    <div><label>N. Prev</label><input type="text" id="numPreventivo" placeholder="Es. 2024/01"></div>
+                    <div><label>Data</label><input type="date" id="data"></div>
+                    <div>
+                        <label style="color:#b00000;">RAL / Colore</label>
+                        <input type="text" id="ralColore" placeholder="Es. RAL 6005">
+                        <div class="checkbox-wrapper" style="font-size:0.8em; margin-top:2px; padding:5px; background:none;">
+                            <input type="checkbox" id="checkRalExtra" style="width:18px; height:18px;"> <span style="font-weight:bold; color:#b00;">Fuori Std (+10%)</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="row-grid-3">
+                    <div id="divListinoStandard">
+                        <label>Listino Base</label>
+                        <select id="selectPrezzoBase">
+                            <option value="369">€ 369 (Std)</option>
+                            <option value="385">€ 385 (Prem)</option>
+                        </select>
+                    </div>
+                    <div id="divPrezzoPersonalizzato" style="display:none;">
+                        <label style="color:blue;">Prezzo (€/mq)</label>
+                        <input type="number" id="inputPrezzoFornitura" value="300.00" step="0.50">
+                    </div>
+                    <div><label>IVA</label><select id="iva"><option value="0.10">10%</option><option value="0.22">22%</option><option value="0.04">4%</option><option value="0">0%</option></select></div>
+                    <div></div>
+                </div>
+
+                <div class="row-grid-3" style="background:#fff3cd; padding:10px; border-radius:5px; margin-top:10px; border:1px solid #ffeeba;">
+                    <div><label>1° Acconto %</label><input type="number" id="acconto1" value="50"></div>
+                    <div><label>2° Acconto %</label><input type="number" id="acconto2" value="30"></div>
+                    <div><label>Saldo %</label><input type="number" id="saldo" value="20"></div>
+                </div>
+                
+                <div class="config-section">
+                    <h4>⚙️ Configurazione Costi</h4>
+                    <div class="row-grid">
+                        <div><label>Smontaggio (€/mq)</label><input type="number" id="confSmontaggio" value="26.48" step="0.01"></div>
+                        <div><label>Oneri Discarica (€)</label><input type="number" id="confDiscarica" value="100.00" step="1.00"></div>
+                    </div>
+                    <div class="row-grid">
+                        <div><label>Smaltimento (≤ 5 pz)</label><input type="number" id="confSmaltLow" value="75.00" step="1.00"></div>
+                        <div><label>Smaltimento (> 5 pz)</label><input type="number" id="confSmaltHigh" value="100.00" step="1.00"></div>
+                    </div>
+                    <div class="row-grid">
+                        <div><label>Sopralluogo (€)</label><input type="number" id="confSopralluogo" value="75.00" step="1.00"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>🪟 MISURE PERSIANE (Per Preventivo)</h3>
+                <div id="listaFinestre"></div>
+                <button id="btnAggiungi" class="btn secondary" onclick="aggiungiFinestra()">+ AGGIUNGI PERSIANA</button>
+                <hr>
+                <h3>📝 Servizi Extra & Costi Interni</h3>
+                <div class="row-grid" style="margin-top:15px;">
+                    <div class="checkbox-wrapper"><input type="checkbox" id="checkDiscarica"> <span>Applica Oneri Discarica</span></div>
+                    <div class="checkbox-wrapper" style="background: #fff3cd;"><input type="checkbox" id="checkSopralluogo"> <span>Sopralluogo Tecnico</span></div>
+                </div>
+                <div class="row-grid" style="margin-top:10px;">
+                    <div class="checkbox-wrapper"><input type="checkbox" id="checkTrabattello"> <span>Uso Trabattello (+150€)</span></div>
+                    <div class="checkbox-wrapper" style="background: #e3f2fd;"><input type="checkbox" id="checkRitiroMagazzino" onchange="toggleTrasporto()"> <span>Ritiro in Magazzino (No Trasp.)</span></div>
+                </div>
+                <div style="margin-top:15px; border-top:1px solid #eee; padding-top:10px;">
+                    <label>🚚 Trasporto (Prezzo al cliente)</label>
+                    <input type="number" id="costoTrasporto" placeholder="0.00">
+                </div>
+                
+                <div style="background-color: #e9ecef; padding:15px; border-radius:5px; margin-top:20px; border:1px solid #ccc;">
+                    <label style="color:#000; text-transform:uppercase; font-size:0.9em; border-bottom:1px solid #999; padding-bottom:5px; margin-bottom:10px;">📊 Dati Gestione (Calcolo Profitto)</label>
+                    <div class="row-grid">
+                        <div><label>N° Operai</label><input type="number" id="numOperai" value="2"></div>
+                        <div><label>N° Giorni</label><input type="number" id="numGiorni" value="1"></div>
+                    </div>
+                    <div class="row-grid" style="align-items: flex-end;">
+                        <div style="flex:1;">
+                            <label>Km Totali da percorrere (1€/km)</label>
+                            <input type="number" id="inputKmGestione" placeholder="Inserisci Km">
+                        </div>
+                        <div style="padding-bottom:2px;">
+                            <button class="btn secondary" style="margin:0; padding:12px; font-size:0.8em; background:#0056b3; border-color:#004494;" onclick="apriMaps()">🗺️ Vedi Km su Maps</button>
+                        </div>
+                    </div>
+                </div>
+
+                <label style="margin-top:15px;">Note:</label>
+                <textarea id="noteInstallatore" rows="3" placeholder="Accesso, difficoltà..."></textarea>
+                
+                <div class="discount-wrapper">
+                    <label>🏷️ Sconto (€)</label>
+                    <input type="number" id="scontoInput" placeholder="0.00">
+                </div>
+                
+                <div id="liveTotalsBox">
+                    <div class="live-row"><span>Imponibile Cliente:</span> <span id="liveImp">€ 0.00</span></div>
+                    <div class="live-row"><span>IVA:</span> <span id="liveIva">€ 0.00</span></div>
+                    <div class="live-total"><span>TOTALE PREVENTIVO:</span> <span id="liveTot">€ 0.00</span></div>
+                    
+                    <div class="profit-section">
+                        <strong style="display:block; text-align:center; margin-bottom:15px; font-size:1.1em;">📉 DETTAGLIO COSTI DI GESTIONE</strong>
+                        <div class="profit-row"><span>Costo Materiali (230€/mq + acc):</span> <span id="costoMat">€ 0.00</span></div>
+                        <div class="profit-row"><span>Costo Manodopera (75€/op/dì):</span> <span id="costoMano">€ 0.00</span></div>
+                        <div class="profit-row"><span>Costo Trasporto (1€/km):</span> <span id="costoTraspInt">€ 0.00</span></div>
+                        
+                        <div class="profit-row subtotal"><span>TOTALE SPESE:</span> <span id="totaleSpese">€ 0.00</span></div>
+                        
+                        <div class="profit-result">
+                            MARGINE NETTO: <span id="valoreProfitto">€ 0.00</span>
+                        </div>
+                    </div>
+                    <div style="font-size:0.8em; color:#666; margin-top:5px; text-align:center;">*Dati a uso interno. Non visibili al cliente.</div>
+                </div>
+
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:15px;">
+                    <button class="btn secondary" style="background:#fff3cd; color:#000; border-color:#ffeeba;" onclick="calcolaTotali()">🔢 CALCOLA E VEDI PROFITTO</button>
+                    
+                    <button class="btn preview-jpg" onclick="generaAnteprima()">👁️ ANTEPRIMA JPG</button>
+                    <button class="btn" id="btnPreventivo">📄 PDF Preventivo</button>
+                    
+                    <button class="btn tech" id="btnTecnico" style="grid-column: span 2;">🛠️ PDF Scheda Tecnica</button>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h3>✍️ Firme Digitali (Preventivo)</h3>
+                <div class="row-grid">
+                    <div>
+                        <button class="btn signature-btn" onclick="openSignatureModal('tecnico')">✍️ FIRMA TECNICO</button>
+                        <img id="previewTecnico" class="signature-preview" alt="Firma Tecnico">
+                        <input type="hidden" id="dataFirmaTecnico">
+                    </div>
+                    <div>
+                        <button class="btn signature-btn" onclick="openSignatureModal('cliente')">✍️ FIRMA CLIENTE</button>
+                        <img id="previewCliente" class="signature-preview" alt="Firma Cliente">
+                        <input type="hidden" id="dataFirmaCliente">
+                    </div>
+                </div>
+                <div style="margin-top: 15px;">
+                    <label>📎 Foto Documenti</label>
+                    <input type="file" id="inputDocs" multiple accept="image/*">
+                </div>
+            </div>
+        </div>
+        
+        <div id="view-posa" class="view-section">
+            <div class="card" style="border: 2px solid #28a745;">
+                <h3 style="color:#28a745;">✅ Dichiarazione di Corretta Posa</h3>
+                <p style="font-size:0.85em; color:#666;">Sezione autonoma: Compila i campi qui sotto o copia dal preventivo.</p>
+                <button class="btn secondary" onclick="copiaDatiDaPreventivo()" style="margin-bottom:15px; font-size:0.9em;">📥 Copia Automaticamente da Preventivo</button>
+                <div style="background:#f4fff4; border:1px solid #c3e6cb; padding:10px; border-radius:5px; margin-bottom:15px;">
+                    <h4 style="margin-top:0; color:#155724;">🛠️ Elementi Installati (Generatore Descrizione)</h4>
+                    <div id="listaElementiPosa"></div>
+                    <button class="btn small-add secondary" onclick="aggiungiRigaPosa()">+ Aggiungi Elemento</button>
+                </div>
+                <label>Descrizione Lavori (Generata Automaticamente)</label>
+                <textarea id="posaDescrizione" rows="6" placeholder="Il testo apparirà qui automaticamente..."></textarea>
+                <hr>
+                <div class="row-grid">
+                     <div><label>Installatore (Nome)</label><input type="text" id="posaInstallatore" value="PLATON STEFAN"></div>
+                     <div><label>Ruolo</label><input type="text" id="posaRuolo" value="Rappresentante LEGALE"></div>
+                </div>
+                 <div class="row-grid">
+                     <div><label>Indirizzo Installatore</label><input type="text" id="posaIndirizzoInst" value="VIA ASSUNTA, 10 - 20834 NOVA MILANESE (MB)"></div>
+                     <div><label>Azienda</label><input type="text" id="posaAzienda" value="ATTILA GROUP S.R.L."></div>
+                </div>
+                <div class="row-grid">
+                    <div><label>Cliente (Proprietario)</label><input type="text" id="posaClienteInput"></div>
+                    <div><label>Luogo Installazione</label><input type="text" id="posaLuogoInput"></div>
+                </div>
+                <div class="row-grid">
+                    <div></div>
+                    <div><label style="color:#28a745;">Data Dichiarazione</label><input type="date" id="posaDataInput"></div>
+                </div>
+                <div class="config-section" style="margin-top:15px;">
+                    <h4>Dettagli Tecnici Prodotti</h4>
+                    <div class="row-grid">
+                        <div><label>Serie Profilo</label><input type="text" id="posaProfilo" placeholder="Es. EPOCAL 2013"></div>
+                        <div><label>Fornitore</label><input type="text" id="posaFornitore" placeholder="Es. ALCOMALLUMINIO SRL"></div>
+                    </div>
+                    <label>Dettagli Componenti (Telaio, Anta, ecc.)</label>
+                    <textarea id="posaDettagliTecnici" rows="4">profilo alluminio - telaio - vz3804
+- anta - vz 4295
+- fascia - vz 0643
+- riporto - vz4296
+- compensatore - zk 16594
+- allette - vz 7831</textarea>
+                </div>
+                <div style="margin-top:15px; padding:10px; border:1px dashed #28a745; background:#f0fff4;">
+                    <label style="color:#28a745;">✍️ Firma Installatore (Se non usi timbro)</label>
+                    <button class="btn signature-btn" onclick="openSignatureModal('tecnico')">FIRMA TECNICO</button>
+                </div>
+                <button class="btn posa" id="btnPosa" style="margin-top:20px;">Genera PDF Verbale Posa</button>
+            </div>
+        </div>
+
+    </div>
+
+    <div id="loadingBar">⏳ Generazione PDF in corso...</div>
+    
+    <div class="container" id="finalImageArea">
+        <div class="success-box">
+            <h2 style="color: green; margin-top:0;">✅ PDF Generato!</h2>
+            <p>Il file è stato scaricato sul tuo dispositivo.</p>
+            <div class="action-buttons">
+                <button class="btn btn-whatsapp" id="btnShareWhatsapp">📲 Invia WhatsApp</button>
+                <button class="btn btn-email" id="btnShareEmail">📧 Invia Email</button>
+            </div>
+        </div>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-top:20px;">
+            <button class="btn secondary" style="background:#fff3cd; border-color:#ffeeba; color:#856404;" onclick="tornaAllaModifica()">✏️ Continua a Modificare</button>
+            <button class="btn delete" onclick="location.reload()">🗑️ Nuovo (Cancella Tutto)</button>
+        </div>
+    </div>
+
+    <div id="preventivoContainer">
+        <div class="container" id="previewToolbar" style="display:none;">
+             <span style="font-weight:bold; font-size:1.1em;">👁️ ANTEPRIMA</span>
+             <div style="display:flex; gap:10px;">
+                 <button class="btn small-add" style="background:white; color:black; border:none;" onclick="salvaJPEG()">💾 Scarica come Immagine (JPEG)</button>
+                 <button class="btn delete" style="width:auto; margin:0;" onclick="chiudiAnteprima()">✏️ Chiudi Anteprima</button>
+             </div>
+        </div>
+
+        <div id="renderArea">
+             <div class="out-header">
+                <img id="renderLogo" class="out-logo" alt="">
+                <div class="out-company-info"><strong>ATTILA GROUP SRL</strong><br>Via 2 Giugno 9, Limbiate<br>Tel: 02/49627130</div>
+            </div>
+
+            <div id="bannerSoloFornitura" class="supply-banner">SOLO FORNITURA - POSA ESCLUSA</div>
+            <div class="out-info-box">
+                <div style="display:flex; justify-content: space-between;">
+                    <div>
+                        <strong>Cliente:</strong> <span id="outCliente"></span><br>
+                        <strong>Residenza:</strong> <span id="outResidenza"></span><br>
+                        <strong>Cantiere:</strong> <span id="outIndirizzo"></span><br>
+                        <strong>Contatti:</strong> <span id="outContatti"></span>
+                    </div>
+                    <div style="text-align:right;">
+                        <strong>Prev. N°:</strong> <span id="outNumPrev"></span><br>
+                        <strong>Data:</strong> <span id="outData"></span><br>
+                        <strong>Colore:</strong> <span id="outColorePrev" style="font-weight:bold;"></span><br>
+                    </div>
+                </div>
+            </div>
+            <table class="out-table">
+                <thead><tr><th width="5%">#</th><th width="5%">Qt.</th><th width="15%">Pos</th><th width="45%">Descrizione & Costi</th><th width="10%">Mq Fatt.</th><th width="20%" class="text-right">Totale</th></tr></thead>
+                <tbody id="outTabellaBody"></tbody>
+            </table>
+            <div style="overflow:hidden;">
+                <div class="total-box">
+                    <div class="total-row"><span>Imponibile Persiane:</span> <span id="outImpInfissi">€ 0,00</span></div>
+                    <div class="total-row" id="rowSmontaggio"><span>Smontaggio:</span> <span id="outSmontaggio">€ 0,00</span></div>
+                    <div class="total-row" id="rowSmaltimento"><span id="lblSmaltimento">Smaltimento:</span> <span id="outSmaltimento">€ 0,00</span></div>
+                    <div class="total-row" id="rowDiscarica"><span>Oneri Discarica:</span> <span id="outDiscarica">€ 0,00</span></div>
+                    <div class="total-row" id="rowSopralluogo"><span>Sopralluogo:</span> <span id="outSopralluogo">€ 0,00</span></div>
+                    <div class="total-row" id="rowTrabattello"><span>Trabattello:</span> <span id="outTrabattello">€ 0,00</span></div>
+                    <div class="total-row" id="rowTrasporto"><span>Trasporto:</span> <span id="outTrasporto">€ 0,00</span></div>
+                    <div class="total-row" id="rowSconto" style="color:#155724;display:none;"><span>Sconto:</span> <span id="outSconto"></span></div>
+                    <div class="total-row imponibile"><span>TOTALE IMPONIBILE:</span> <span id="outTotaleImp">€ 0,00</span></div>
+                    <div class="total-row" style="margin-top:5px;"><span>IVA (<span id="outPercIva"></span>%):</span> <span id="outValoreIva">€ 0,00</span></div>
+                    <div class="total-row grand-total"><span>TOTALE COMPRESO IVA:</span> <span id="outGrandTotal">€ 0,00</span></div>
+                </div>
+            </div>
+            <div id="orientableDisclaimer" class="disclaimer-box">
+                <strong>Nota Tecnica (Lamelle Orientabili):</strong> L'accoppiamento meccanico necessario per l'orientamento delle lamelle può comportare una minima e fisiologica filtrazione di luce o aria anche in chiusura.
+            </div>
+            
+            <div id="outNoteInstallatoreBox" class="installer-notes-box">
+                <div class="note-header">⚠️ NOTE</div>
+                <p id="outNoteInstallatoreText" style="margin:0;"></p>
+            </div>
+
+            <div class="payment-container">
+                <div class="payment-header">MODALITÀ DI PAGAMENTO</div>
+                <div class="payment-steps" id="paymentStepsContainer">
+                    </div>
+            </div>
+
+            <div class="signature-print-container">
+                <div class="signature-box"><img id="imgFirmaTecnicoRender" style="height:70px; display:none; margin:0 auto;"><div class="signature-line">Firma Tecnico</div></div>
+                <div class="signature-box"><img id="imgFirmaClienteRender" style="height:70px; display:none; margin:0 auto;"><div class="signature-line">Firma Cliente (per accettazione)</div></div>
+            </div>
+            <div id="areaDocumenti" style="margin-top:30px;"></div>
+        </div>
+    </div>
+
+    <div id="schedaTecnicaContainer">
+        <div id="techRenderArea">
+            <div class="out-header"><img id="renderLogoTech" class="out-logo" alt=""><div style="text-align:right;"><strong>SCHEDA TECNICA PRODUZIONE</strong><br>Rif: <span id="techCliente"></span></div></div>
+            <div class="client-info-box">
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                    <div><strong>Cliente:</strong> <span id="techClienteFull"></span></div>
+                    <div><strong>Telefono:</strong> <span id="techTelFull"></span></div>
+                    <div><strong>Email:</strong> <span id="techEmailFull"></span></div>
+                    <div><strong>Colore:</strong> <span id="techRalFull" style="font-weight:bold;"></span></div>
+                </div>
+                <div style="margin-top:10px; border-top:1px solid #eee; padding-top:5px;">
+                     <strong>Residenza:</strong> <span id="techResidenzaFull"></span><br>
+                     <strong>Cantiere:</strong> <span id="techCantiereFull"></span>
+                </div>
+            </div>
+            <div class="tech-grid" id="techGridBody"></div>
+            <div id="techNoteBox" class="installer-notes-box" style="margin-top:30px; display:none;"><strong>NOTE TECNICHE:</strong> <p id="techNoteText"></p></div>
+        </div>
+    </div>
+
+    <div id="posaContainer">
+        <div id="posaRenderArea">
+            <div class="out-header">
+                <img id="renderLogoPosa" class="out-logo" alt="">
+                <div style="text-align:right;"><strong>ATTILA GROUP S.R.L.</strong><br>Via Varesina 213, 20156 Milano<br>P.IVA 11886980967</div>
+            </div>
+            <div class="posa-header-box"><div class="posa-header-title">DICHIARAZIONE DI CORRETTA POSA IN OPERA</div><div style="font-size:0.9em; margin-top:5px;">DEI MATERIALI DI PRODOTTI/ELEMENTI COSTRUTTIVI IN OPERA</div></div>
+            <div style="text-align:center; font-size:0.9em; margin-bottom:15px; font-style:italic;">comprovante l'esecuzione a perfetta regola d'arte della posa di persiane</div>
+            <div style="border-top: 1px solid #000;">
+                <div class="posa-field-row"><div class="posa-field-label">Il sottoscritto installatore</div><div class="posa-field-value" id="renderPosaInstallatore"></div></div>
+                <div class="posa-field-row"><div class="posa-field-label">Domiciliato in</div><div class="posa-field-value" id="renderPosaIndirizzoInst"></div></div>
+                <div class="posa-field-row"><div class="posa-field-label">Nella sua qualità di</div><div class="posa-field-value" id="renderPosaRuolo"></div></div>
+                <div class="posa-field-row"><div class="posa-field-label">Della impresa</div><div class="posa-field-value" id="renderPosaAzienda"></div></div>
+            </div>
+            <div style="margin-top:20px; border:1px solid #000;">
+                <div style="display:flex;">
+                     <div style="width:30%; padding:15px; font-weight:bold; background:#eee; display:flex; align-items:center;">avendo eseguito i lavori di:</div>
+                     <div style="width:70%; padding:15px; background:#ffffcc; color:#000; font-weight:bold; text-align:center; font-size:1.1em;" id="renderPosaDescrizione"></div>
+                </div>
+            </div>
+            <div style="border: 1px solid #000; margin-top:20px; border-bottom:none;">
+                 <div class="posa-field-row"><div class="posa-field-label">Per (Cliente)</div><div class="posa-field-value" id="renderPosaCliente"></div></div>
+                 <div class="posa-field-row"><div class="posa-field-label">Sito in (Cantiere)</div><div class="posa-field-value" id="renderPosaLuogo"></div></div>
+                 <div class="posa-field-row" style="border-bottom:1px solid #000;"><div class="posa-field-label">Di proprietà di</div><div class="posa-field-value" id="renderPosaProprietario"></div></div>
+            </div>
+            <div class="posa-section-title" style="text-align:center;">DICHIARA LA CORRETTA POSA IN OPERA</div>
+            <div class="posa-declaration-text">
+                secondo quanto previsto dal fornitore/produttore e secondo le procedure da questo fornite. Per una puntuale individuazione dei singoli prodotti e/o materiali dal sottoscritto posti in opera si unisce, in calce alla presente dichiarazione, l'elenco con i riferimenti per l'individuazione, insieme alle schede tecniche del fornitore/produttore. Si rammenta che le procedure (protocolli di installazione) debbono essere indicate dal fornitore/produttore in conformità alle omologazioni e/o prove di laboratorio
+            </div>
+             <div class="posa-section-title" style="text-align:center; margin-top:20px;">PER I QUALI SI DICHIARA LA CORRETTA POSA IN OPERA</div>
+             <table class="posa-tech-details" style="width:100%; border-collapse:collapse;">
+                 <tr><td style="width:30%; background:#f0f0f0; font-weight:bold;">Descrizione prodotto / Profilo</td><td style="width:70%;">Persiana: <span id="renderPosaProfilo" style="font-weight:bold;"></span><br><pre id="renderPosaDettagli" style="font-family:inherit; white-space:pre-wrap; margin:0;"></pre></td></tr>
+                 <tr><td style="background:#f0f0f0; font-weight:bold;">Dati commerciali fornitore</td><td id="renderPosaFornitore"></td></tr>
+                 <tr><td style="background:#f0f0f0; font-weight:bold;">Luogo di installazione</td><td id="renderPosaLuogo2"></td></tr>
+             </table>
+            <div class="signature-print-container" style="margin-top:50px;">
+                <div class="signature-box"><div>DATA</div><div style="border:1px solid #000; padding:10px; margin-top:5px;" id="renderPosaData"></div></div>
+                <div class="signature-box" style="width:300px;"><div>FIRMA INSTALLATORE</div><div style="border:1px solid #000; height:80px; margin-top:5px; display:flex; align-items:center; justify-content:center; overflow:hidden; position:relative;"><img id="imgTimbroAziendaRender" style="max-height:70px; max-width:90%; object-fit:contain; display:none; position:absolute; z-index:2;"><img id="imgFirmaTecnicoPosa" style="max-height:70px; display:none; position:absolute; z-index:1;"></div></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- FUNZIONI ---
+        function toggleModalita() {
+            const mode = document.getElementById('modalitaPreventivo').value;
+            const divStd = document.getElementById('divListinoStandard');
+            const divCust = document.getElementById('divPrezzoPersonalizzato');
+            if(mode === 'solo_fornitura') { divStd.style.display = 'none'; divCust.style.display = 'block'; } 
+            else { divStd.style.display = 'block'; divCust.style.display = 'none'; }
+        }
+
+        function toggleTrasporto() {
+            const isRitiro = document.getElementById('checkRitiroMagazzino').checked;
+            const inputTrasp = document.getElementById('costoTrasporto');
+            if(isRitiro) { inputTrasp.value = 0; inputTrasp.disabled = true; inputTrasp.style.backgroundColor = '#e9ecef'; } 
+            else { inputTrasp.disabled = false; inputTrasp.style.backgroundColor = '#fff'; }
+        }
+
+        function togglePiemontesi(select) {
+            const container = select.parentNode;
+            const input = container.querySelector('.num-piemontesi');
+            if(select.value === 'Piemontese') { input.style.display = 'inline-block'; } 
+            else { input.style.display = 'none'; input.value = 2; }
+        }
+
+        let count = 0;
+        let countPosa = 0;
+        const SVG_L = `<svg class="arrow-svg" viewBox="0 0 100 100" preserveAspectRatio="none"><path class="arrow-line" d="M100,0 L0,50 L100,100" fill="none"/></svg>`;
+        const SVG_R = `<svg class="arrow-svg" viewBox="0 0 100 100" preserveAspectRatio="none"><path class="arrow-line" d="M0,0 L100,50 L0,100" fill="none"/></svg>`;
+        const SVG_S = `<svg class="arrow-svg" viewBox="0 0 100 100" preserveAspectRatio="none"><path class="arrow-line" d="M10,50 L90,50 M10,50 L30,30 M10,50 L30,70 M90,50 L70,30 M90,50 L70,30 M90,50 L70,30 M90,50 L70,30 M90,50 L70,30 M90,50 L70,30 M90,50 L70,30 M90,50 L70,30 M90,50 L70,30 M90,50 L70,30 M90,50 L70,30 M90,50 L70,30 M90,50 L70,30 M90,50 L70,70" fill="none"/></svg>`;
+
+        window.rimuoviFinestra = function(id) { const el = document.getElementById(id); if(el) el.remove(); }
+        window.rimuoviElementoPosa = function(id) { const el = document.getElementById(id); if(el) { el.remove(); calcolaDescrizionePosa(); } }
+
+        function aggiungiFinestra() {
+            count++;
+            const h = `
+            <div class="window-item" id="win-${count}">
+                <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                    <strong>PERS. #${count}</strong>
+                    <div>
+                        <button class="btn duplicate" onclick="duplicaFinestra('win-${count}')">📑 DUPLICA</button>
+                        <button class="btn delete" onclick="rimuoviFinestra('win-${count}')">RIMUOVI</button>
+                    </div>
+                </div>
+                <div class="row-grid" style="background:#eef; padding:10px; border-radius:4px; margin-bottom:10px;">
+                    <div><label>Quantità (Pezzi)</label><input type="number" class="qty" value="1" min="1" style="font-weight:bold;"></div>
+                    <div><label>Posizione</label><input type="text" class="pos"></div>
+                </div>
+                <div class="row-grid">
+                    <div><label>Tipo</label><select class="tipo"><option>Finestra</option><option>PortaFinestra</option></select></div>
+                    <div><label>Ante</label><input type="number" class="ante" value="2"></div>
+                </div>
+                <div class="row-grid">
+                    <div><label>Apertura</label><select class="apertura"><option>Battente</option><option>Libro</option><option>Pacchetto</option><option>Scorrevole Interno Muro</option><option>Scorrevole Esterno Muro</option></select></div>
+                    <div><label>Install.</label><select class="installazione"><option value="Cardini a muro">Cardini a muro</option><option value="Con Telaio">Con Telaio</option></select></div>
+                </div>
+                <div class="row-grid">
+                     <div><label>Mano</label><select class="mano"><option value="">--</option><option value="Dx">Dx</option><option value="Sx">Sx</option></select></div>
+                     <div><label>Traverso (mm)</label><input type="number" class="traverso" placeholder="0=No"></div>
+                </div>
+                <div class="row-grid-3">
+                    <div><label>Largh.</label><input type="number" class="w"></div>
+                    <div><label>Alt.</label><input type="number" class="h"></div>
+                    <div><label>Chiusura</label>
+                        <div style="display:flex; gap:5px;">
+                            <select class="chiusura" onchange="togglePiemontesi(this)" style="flex:1;">
+                                <option value="Standard">Standard</option>
+                                <option value="Piemontese">Piemontese</option>
+                                <option value="Cremonese">Cremonese</option>
+                                <option value="Serratura">Serratura</option>
+                            </select>
+                            <input type="number" class="num-piemontesi" value="2" min="1" style="display:none; width:70px;" placeholder="N.">
+                        </div>
+                    </div>
+                </div>
+                <div class="row-grid">
+                    <div><label>Coprifilo Esterno</label><select class="coprifilo"><option value="">Nessuno</option><option value="alu">Alluminio (€30/ml)</option><option value="pvc">PVC Scatolato (€19/ml)</option></select></div>
+                    <div><label>Lamelle</label>
+                        <select class="lamelle">
+                            <option value="Fisse">Fisse</option>
+                            <option value="Orientabili">Orientabili (+85€)</option>
+                            <option value="Sportello Alla Genovese">Sportello Alla Genovese (+150€)</option>
+                            <option value="Cieche">Cieche</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="background:#f1f3f5; padding:10px; margin-top:5px;">
+                    <div style="display:flex; align-items:center; margin-bottom:5px;">
+                        <input type="checkbox" class="is-mono" style="margin-right:10px;">
+                        <label style="margin:0;">Monoblocco</label>
+                    </div>
+                    <label>Spalletta Int.</label><input type="text" class="misura-int">
+                </div>
+                <div style="background:#fff3cd; padding:10px; margin-top:10px; display:flex; align-items:center;">
+                    <input type="checkbox" class="do-smontaggio" style="margin-right:10px;">
+                    <label style="margin:0;">Smontaggio</label>
+                </div>
+            </div>`;
+            document.getElementById('listaFinestre').insertAdjacentHTML('beforeend', h);
+        }
+
+        window.duplicaFinestra = function(sourceId) {
+            const sourceEl = document.getElementById(sourceId);
+            if(!sourceEl) return;
+            aggiungiFinestra();
+            const newId = `win-${count}`;
+            const newEl = document.getElementById(newId);
+            const fields = ['.qty', '.pos', '.tipo', '.ante', '.apertura', '.installazione', '.mano', '.traverso', '.w', '.h', '.chiusura', '.coprifilo', '.lamelle', '.misura-int', '.num-piemontesi'];
+            fields.forEach(cls => {
+                const sInput = sourceEl.querySelector(cls);
+                const nInput = newEl.querySelector(cls);
+                if(sInput && nInput) nInput.value = sInput.value;
+            });
+            const checks = ['.is-mono', '.do-smontaggio'];
+            checks.forEach(cls => {
+                const sCheck = sourceEl.querySelector(cls);
+                const nCheck = newEl.querySelector(cls);
+                if(sCheck && nCheck) nCheck.checked = sCheck.checked;
+            });
+            const chiusuraSelect = newEl.querySelector('.chiusura');
+            if(chiusuraSelect) togglePiemontesi(chiusuraSelect);
+            newEl.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function aggiungiRigaPosa(dati = null) {
+            countPosa++;
+            let qty = 1, tipo = "Finestra", ante = 2, apertura = "Battente", colore = "";
+            if(dati) { tipo = dati.tipo; ante = dati.ante; apertura = dati.apertura; colore = dati.colore; qty = dati.qty || 1; }
+            let html = `<div class="posa-item" id="posa-row-${countPosa}"><div style="text-align:right;"><button class="btn delete" style="padding:4px 8px; font-size:0.7em; margin:0;" onclick="rimuoviElementoPosa('posa-row-${countPosa}')">X</button></div><div class="row-grid-4"><div><label>Qta</label><input type="number" class="p-qty" value="${qty}" min="1" oninput="calcolaDescrizionePosa()"></div><div><label>Tipo</label><select class="p-tipo" onchange="calcolaDescrizionePosa()"><option ${tipo=='Finestra'?'selected':''}>Finestra</option><option ${tipo=='PortaFinestra'?'selected':''}>PortaFinestra</option></select></div><div><label>Ante</label><input type="number" class="p-ante" value="${ante}" min="1" oninput="calcolaDescrizionePosa()"></div><div><label>Apertura</label><select class="p-apertura" onchange="calcolaDescrizionePosa()"><option ${apertura.includes('Battente')?'selected':''}>Battente</option><option ${apertura.includes('Libro')?'selected':''}>Libro</option><option ${apertura.includes('Pacchetto')?'selected':''}>Pacchetto</option><option ${apertura.includes('Scorrevole')?'selected':''}>Scorrevole</option></select></div></div><div><label>Colore / Materiale</label><input type="text" class="p-colore" value="${colore}" placeholder="Es. Alluminio RAL 6005" oninput="calcolaDescrizionePosa()"></div></div>`;
+            document.getElementById('listaElementiPosa').insertAdjacentHTML('beforeend', html);
+            calcolaDescrizionePosa();
+        }
+
+        function calcolaDescrizionePosa() {
+            const rows = document.querySelectorAll('.posa-item');
+            if(rows.length === 0) { document.getElementById('posaDescrizione').value = ""; return; }
+            let totalQty = 0; let descDettagli = [];
+            rows.forEach(r => {
+                const q = parseInt(r.querySelector('.p-qty').value) || 0;
+                totalQty += q;
+                let dett = `( N°${q} - Persiana ${r.querySelector('.p-tipo').value} ${r.querySelector('.p-ante').value} ante apertura ${r.querySelector('.p-apertura').value} )`;
+                descDettagli.push(dett);
+            });
+            let coloreMain = rows[0].querySelector('.p-colore').value || "in alluminio";
+            let frase = `Posa di N°${totalQty} persiane ${coloreMain}\n`;
+            descDettagli.forEach(d => { frase += `${d}\n`; });
+            document.getElementById('posaDescrizione').value = frase;
+        }
+
+        function copiaDatiDaPreventivo() {
+            const cli = document.getElementById('cliente').value;
+            if(!cli) { if(!confirm("Dati cliente vuoti. Vuoi pulire comunque?")) return; }
+            document.getElementById('posaClienteInput').value = cli;
+            document.getElementById('posaLuogoInput').value = document.getElementById('indirizzoCantiere').value || document.getElementById('indirizzoResidenza').value;
+            document.getElementById('listaElementiPosa').innerHTML = "";
+            countPosa = 0;
+            const rows = document.querySelectorAll('.window-item');
+            const ralGlobal = document.getElementById('ralColore').value;
+            if(rows.length > 0) { 
+                rows.forEach(r => { 
+                    const qVal = parseInt(r.querySelector('.qty').value) || 1;
+                    aggiungiRigaPosa({ tipo: r.querySelector('.tipo').value, ante: r.querySelector('.ante').value, apertura: r.querySelector('.apertura').value, colore: "in alluminio " + (ralGlobal ? ralGlobal : ""), qty: qVal }); 
+                }); 
+            } else { aggiungiRigaPosa(); }
+        }
+
+        function calcolaTotali() {
+            const rows = document.querySelectorAll('.window-item');
+            if(rows.length === 0) { alert("Inserisci almeno una persiana!"); return; }
+
+            const modalita = document.getElementById('modalitaPreventivo').value;
+            let baseP = modalita === 'solo_fornitura' ? parseFloat(document.getElementById('inputPrezzoFornitura').value) : parseFloat(document.getElementById('selectPrezzoBase').value);
+            if(isNaN(baseP)) baseP = 369;
+
+            const isRalExtra = document.getElementById('checkRalExtra').checked;
+            let currentBaseP = baseP * (isRalExtra ? 1.10 : 1.0);
+            
+            const iva = parseFloat(document.getElementById('iva').value);
+            const sc = parseFloat(document.getElementById('scontoInput').value) || 0;
+            const cTrasporto = parseFloat(document.getElementById('costoTrasporto').value) || 0;
+            const cTrabattello = document.getElementById('checkTrabattello').checked ? 150 : 0;
+            
+            const C_SM=parseFloat(document.getElementById('confSmontaggio').value)||0;
+            const C_D=parseFloat(document.getElementById('confDiscarica').value)||0;
+            const C_SL=parseFloat(document.getElementById('confSmaltLow').value)||0;
+            const C_SH=parseFloat(document.getElementById('confSmaltHigh').value)||0;
+            const C_SOPR=parseFloat(document.getElementById('confSopralluogo').value)||0;
+            
+            const EX={or:85,pi:25,cr:85,se:185, gen:150};
+            let totInf=0, totMqS=0, totPz=0;
+
+            const COST_PERSIANA_MQ = 230;
+            const COST_ORIENT_MQ = 45;
+            const COST_CREMONESE = 13;
+            const COST_PIEMONTESE = 8;
+            
+            let totalCostMat = 0;
+
+            rows.forEach((r)=>{
+                const qty = parseInt(r.querySelector('.qty').value) || 1;
+                const w=parseFloat(r.querySelector('.w').value)||0; 
+                const hi=parseFloat(r.querySelector('.h').value)||0;
+                const lam=r.querySelector('.lamelle').value; 
+                const ch=r.querySelector('.chiusura').value;
+                const cop = r.querySelector('.coprifilo').value;
+                const doS=r.querySelector('.do-smontaggio').checked;
+                const aper = r.querySelector('.apertura').value; 
+                
+                let mqR=(w*hi)/1000000; let mqF=mqR<1.30?1.30:mqR;
+                
+                let slidingSurcharge = aper === 'Scorrevole Esterno Muro' ? 30 : 0;
+                let pricePerMq = currentBaseP + slidingSurcharge;
+                let fixedExtraTotal = 0; 
+                
+                if(lam === 'Orientabili') pricePerMq += EX.or;
+                if(lam === 'Sportello Alla Genovese') fixedExtraTotal += EX.gen;
+
+                if(ch==='Piemontese'){ let nPie = parseInt(r.querySelector('.num-piemontesi').value) || 2; fixedExtraTotal += (EX.pi * nPie); }
+                else if(ch==='Cremonese') fixedExtraTotal += EX.cr;
+                else if(ch==='Serratura') fixedExtraTotal += EX.se;
+                
+                let coprifiloCost = 0;
+                if (cop) {
+                   let linearMeters = ( (hi * 2) + w ) / 1000; 
+                   if(cop === 'alu') coprifiloCost = linearMeters * 30;
+                   if(cop === 'pvc') coprifiloCost = linearMeters * 19;
+                }
+                fixedExtraTotal += coprifiloCost;
+
+                let prezzoUnitario = (pricePerMq * mqF) + fixedExtraTotal;
+                totInf += (prezzoUnitario * qty);
+
+                if(doS){ totMqS+=(mqR * qty); totPz += qty; }
+
+                let costoItem = (mqF * COST_PERSIANA_MQ);
+                if(lam === 'Orientabili') costoItem += (mqF * COST_ORIENT_MQ);
+                if(ch === 'Cremonese') costoItem += COST_CREMONESE;
+                if(ch === 'Piemontese') { let nPie = parseInt(r.querySelector('.num-piemontesi').value) || 2; costoItem += (nPie * COST_PIEMONTESE); }
+                totalCostMat += (costoItem * qty);
+            });
+
+            const cSm=totMqS*C_SM; 
+            let cSma=totPz>0?(totPz>5?C_SH:C_SL):0; 
+            const cDi=document.getElementById('checkDiscarica').checked?C_D:0; 
+            const cSo=document.getElementById('checkSopralluogo').checked?C_SOPR:0;
+            
+            let imp = totInf + cSm + cSma + cDi + cSo + cTrasporto + cTrabattello - sc; 
+            if(imp<0)imp=0; 
+            const vIva=imp*iva; const tot=imp+vIva;
+
+            const nOp = parseInt(document.getElementById('numOperai').value) || 2;
+            const nD = parseInt(document.getElementById('numGiorni').value) || 1;
+            const kmGest = parseFloat(document.getElementById('inputKmGestione').value) || 0;
+            
+            const totalCostLabor = nOp * nD * 75; 
+            const totalCostTransport = kmGest * 1; 
+            const totalExpenses = totalCostMat + totalCostLabor + totalCostTransport;
+            const margine = imp - totalExpenses;
+
+            document.getElementById('liveImp').innerText = "€ " + imp.toFixed(2);
+            document.getElementById('liveIva').innerText = "€ " + vIva.toFixed(2);
+            document.getElementById('liveTot').innerText = "€ " + tot.toFixed(2);
+            document.getElementById('costoMat').innerText = "€ " + totalCostMat.toFixed(2);
+            document.getElementById('costoMano').innerText = "€ " + totalCostLabor.toFixed(2);
+            document.getElementById('costoTraspInt').innerText = "€ " + totalCostTransport.toFixed(2);
+            document.getElementById('totaleSpese').innerText = "€ " + totalExpenses.toFixed(2);
+            
+            const elMargine = document.getElementById('valoreProfitto');
+            elMargine.innerText = "€ " + margine.toFixed(2);
+            elMargine.style.color = margine >= 0 ? "green" : "red";
+
+            document.getElementById('liveTotalsBox').style.display = 'block';
+        }
+
+        function caricaImmaginiEProcedi(callback) {
+            const fileInput = document.getElementById('inputLogo');
+            const stampInput = document.getElementById('inputTimbro');
+            const readFile = (file) => new Promise((resolve) => { const reader = new FileReader(); reader.onload = (e) => resolve(e.target.result); reader.readAsDataURL(file); });
+            
+            const promises = [];
+            let logoSrc = null, stampSrc = null;
+            if(fileInput.files[0]) promises.push(readFile(fileInput.files[0]).then(res => logoSrc = res));
+            if(stampInput.files[0]) promises.push(readFile(stampInput.files[0]).then(res => stampSrc = res));
+
+            Promise.all(promises).then(() => { 
+                const rows = document.querySelectorAll('.window-item');
+                callback(rows, logoSrc, stampSrc); 
+            });
+        }
+
+        function generaAnteprima() {
+            if(document.querySelectorAll('.window-item').length === 0) { alert("Inserisci almeno una persiana!"); return; }
+            caricaImmaginiEProcedi((rows, logoSrc, stampSrc) => {
+                elaboraDati('preventivo', rows, logoSrc, stampSrc, 'anteprima');
+            });
+        }
+
+        function generaPDF(tipo) {
+            if(tipo !== 'posa') { if(document.querySelectorAll('.window-item').length === 0) { alert("Inserisci almeno una persiana!"); return; } }
+            document.getElementById('loadingBar').style.display = 'block';
+            caricaImmaginiEProcedi((rows, logoSrc, stampSrc) => {
+                elaboraDati(tipo, rows, logoSrc, stampSrc, 'pdf');
+            });
+        }
+
+        function salvaJPEG() {
+            const element = document.getElementById('renderArea');
+            html2canvas(element, { scale: 2, useCORS: true }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `Preventivo_${document.getElementById('cliente').value || 'Cliente'}.jpg`;
+                link.href = canvas.toDataURL('image/jpeg', 0.9);
+                link.click();
+            });
+        }
+
+        function elaboraDati(tipo, rows, logoSrc, stampSrc, mode = 'pdf') {
+            document.getElementById('preventivoContainer').style.display = 'none';
+            document.getElementById('schedaTecnicaContainer').style.display = 'none';
+            document.getElementById('posaContainer').style.display = 'none';
+            document.getElementById('finalImageArea').style.display = 'none';
+            document.getElementById('previewToolbar').style.display = 'none'; 
+
+            const cliente = document.getElementById('cliente').value;
+            const indirizzoCantiere = document.getElementById('indirizzoCantiere').value;
+            const indirizzoResidenza = document.getElementById('indirizzoResidenza').value;
+            const nPrev = document.getElementById('numPreventivo').value;
+            const email = document.getElementById('emailCliente').value;
+            const telefono = document.getElementById('telCliente').value;
+            const ral = document.getElementById('ralColore').value;
+            const contatti = (email ? email : "") + (telefono ? (email ? " - " : "") + telefono : "");
+            const dataStr = new Date(document.getElementById('data').value).toLocaleDateString('it-IT');
+            const note = document.getElementById('noteInstallatore').value;
+            const fT = document.getElementById('dataFirmaTecnico').value;
+            const fC = document.getElementById('dataFirmaCliente').value;
+
+            // PERCENTUALI CUSTOM
+            const p1 = document.getElementById('acconto1').value || 50;
+            const p2 = document.getElementById('acconto2').value || 30;
+            const p3 = document.getElementById('saldo').value || 20;
+
+            let targetDiv = '', fileName = '';
+
+            if(tipo === 'posa') {
+                targetDiv = 'posaRenderArea'; fileName = `Verbale_Posa_${document.getElementById('posaClienteInput').value}.pdf`;
+                document.getElementById('posaContainer').style.display = 'block';
+                if(logoSrc) document.getElementById('renderLogoPosa').src = logoSrc;
+                document.getElementById('renderPosaInstallatore').innerText = document.getElementById('posaInstallatore').value;
+                document.getElementById('renderPosaRuolo').innerText = document.getElementById('posaRuolo').value;
+                document.getElementById('renderPosaIndirizzoInst').innerText = document.getElementById('posaIndirizzoInst').value;
+                document.getElementById('renderPosaAzienda').innerText = document.getElementById('posaAzienda').value;
+                document.getElementById('renderPosaDescrizione').innerText = document.getElementById('posaDescrizione').value;
+                document.getElementById('renderPosaCliente').innerText = document.getElementById('posaClienteInput').value;
+                document.getElementById('renderPosaLuogo').innerText = document.getElementById('posaLuogoInput').value;
+                document.getElementById('renderPosaProprietario').innerText = document.getElementById('posaClienteInput').value;
+                document.getElementById('renderPosaProfilo').innerText = document.getElementById('posaProfilo').value;
+                document.getElementById('renderPosaDettagli').innerText = document.getElementById('posaDettagliTecnici').value;
+                document.getElementById('renderPosaFornitore').innerText = document.getElementById('posaFornitore').value;
+                document.getElementById('renderPosaLuogo2').innerText = document.getElementById('posaLuogoInput').value;
+                document.getElementById('renderPosaData').innerText = new Date(document.getElementById('posaDataInput').value).toLocaleDateString('it-IT');
+                const imgTimbro = document.getElementById('imgTimbroAziendaRender');
+                const imgFirmaTech = document.getElementById('imgFirmaTecnicoPosa');
+                imgTimbro.style.display = 'none'; imgFirmaTech.style.display = 'none';
+                if(stampSrc) { imgTimbro.src = stampSrc; imgTimbro.style.display = 'block'; } else if(fT) { imgFirmaTech.src = fT; imgFirmaTech.style.display = 'block'; }
+                
+                createPdf(targetDiv, fileName, telefono, email);
+                return;
+            }
+
+            if(tipo === 'preventivo') {
+                targetDiv = 'renderArea'; fileName = `Preventivo_${cliente}.pdf`;
+                document.getElementById('preventivoContainer').style.display = 'block';
+                
+                if(mode === 'anteprima') {
+                    document.getElementById('view-preventivo').style.display = 'none';
+                    document.getElementById('previewToolbar').style.display = 'flex';
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+
+                if(logoSrc) document.getElementById('renderLogo').src = logoSrc;
+                
+                const modalita = document.getElementById('modalitaPreventivo').value;
+
+                if (modalita === 'solo_fornitura') {
+                    document.getElementById('bannerSoloFornitura').style.display = 'block';
+                } else {
+                    document.getElementById('bannerSoloFornitura').style.display = 'none';
+                }
+
+                const paymentContainer = document.getElementById('paymentStepsContainer');
+                if (modalita === 'solo_fornitura') {
+                    paymentContainer.innerHTML = `
+                        <div class="pay-step"><span class="pay-perc">50%</span><span class="pay-label">ACCONTO</span><span class="pay-desc">Accettazione Offerta</span></div>
+                        <div class="pay-step"><span class="pay-perc">50%</span><span class="pay-label">SALDO</span><span class="pay-desc">A Merce pronta per la spedizione</span></div>`;
+                } else {
+                    paymentContainer.innerHTML = `
+                        <div class="pay-step"><span class="pay-perc">${p1}%</span><span class="pay-label">1. ACCONTO</span><span class="pay-desc">All'accettazione e conferma ordine.</span></div>
+                        <div class="pay-step"><span class="pay-perc">${p2}%</span><span class="pay-label">2. ACCONTO</span><span class="pay-desc">A produzione terminata.</span></div>
+                        <div class="pay-step"><span class="pay-perc">${p3}%</span><span class="pay-label">3. SALDO</span><span class="pay-desc">A fine lavori.</span></div>`;
+                }
+
+                document.getElementById('outCliente').innerText = cliente;
+                document.getElementById('outResidenza').innerText = indirizzoResidenza;
+                document.getElementById('outIndirizzo').innerText = indirizzoCantiere;
+                document.getElementById('outContatti').innerText = contatti;
+                document.getElementById('outNumPrev').innerText = nPrev;
+                document.getElementById('outData').innerText = dataStr;
+                const isRalExtra = document.getElementById('checkRalExtra').checked;
+                document.getElementById('outColorePrev').innerText = ral + (isRalExtra ? " (Fuori Std)" : "");
+                
+                let baseP = modalita === 'solo_fornitura' ? parseFloat(document.getElementById('inputPrezzoFornitura').value) : parseFloat(document.getElementById('selectPrezzoBase').value);
+                if(isNaN(baseP)) baseP = 369;
+                const iva = parseFloat(document.getElementById('iva').value);
+                const sc = parseFloat(document.getElementById('scontoInput').value) || 0;
+                const cTrasporto = parseFloat(document.getElementById('costoTrasporto').value) || 0;
+                const cTrabattello = document.getElementById('checkTrabattello').checked ? 150 : 0;
+                const C_SM=parseFloat(document.getElementById('confSmontaggio').value)||0;
+                const C_D=parseFloat(document.getElementById('confDiscarica').value)||0;
+                const C_SL=parseFloat(document.getElementById('confSmaltLow').value)||0;
+                const C_SH=parseFloat(document.getElementById('confSmaltHigh').value)||0;
+                const C_SOPR=parseFloat(document.getElementById('confSopralluogo').value)||0;
+                const EX={or:85,pi:25,cr:85,se:185, gen:150};
+                let totInf=0, totMqS=0, totPz=0, h="", hasOrient=false;
+                
+                rows.forEach((r,i)=>{
+                    const qty = parseInt(r.querySelector('.qty').value) || 1;
+                    const w=parseFloat(r.querySelector('.w').value)||0, hi=parseFloat(r.querySelector('.h').value)||0;
+                    const lam=r.querySelector('.lamelle').value, ch=r.querySelector('.chiusura').value, doS=r.querySelector('.do-smontaggio').checked;
+                    const cop = r.querySelector('.coprifilo').value;
+                    const ante = r.querySelector('.ante').value, aper = r.querySelector('.apertura').value, install = r.querySelector('.installazione').value, mano = r.querySelector('.mano').value;
+                    let valTraverso = r.querySelector('.traverso').value, traverso = (valTraverso === "" || valTraverso === null) ? 1000 : parseFloat(valTraverso); if(isNaN(traverso)) traverso = 1000;
+                    let descText = `PERSIANA ${r.querySelector('.tipo').value.toUpperCase()}<br>${ante} Ante - ${aper} - <strong>${install}</strong>`;
+                    if(mano) descText += ` - Mano: ${mano}`; if(traverso > 0) descText += ` - Traverso H: ${traverso}mm`;
+                    if(lam === 'Orientabili') hasOrient = true;
+                    let mqR=(w*hi)/1000000; let mqF=mqR<1.30?1.30:mqR;
+                    let currentBaseP = baseP * (isRalExtra ? 1.10 : 1.0);
+                    let slidingSurcharge = aper === 'Scorrevole Esterno Muro' ? 30 : 0;
+                    let pricePerMq = currentBaseP + slidingSurcharge;
+                    let fixedExtraTotal = 0; let costItemsHtml = `<ul class="cost-list"><li><span>${isRalExtra?`Base (RAL +10%)`:`Tariffa Base`}${modalita==='solo_fornitura'?" (Solo Forn.)":""}:</span> <span>€ ${currentBaseP.toFixed(2)} /mq</span></li>`;
+                    if(slidingSurcharge > 0) costItemsHtml += `<li><span>Scorr. Est. Muro:</span> <span>+ € ${slidingSurcharge.toFixed(2)} /mq</span></li>`;
+                    if(lam==='Orientabili'){ pricePerMq += EX.or; costItemsHtml += `<li><span>Orientabili:</span> <span>+ € ${EX.or.toFixed(2)} /mq</span></li>`; }
+                    if(lam==='Sportello Alla Genovese'){ fixedExtraTotal += EX.gen; costItemsHtml += `<li><span>Sportello Genovese:</span> <span>+ € ${EX.gen.toFixed(2)} (Fisso)</span></li>`; }
+                    if(ch==='Piemontese'){ let nPie = parseInt(r.querySelector('.num-piemontesi').value) || 2; let cost = EX.pi * nPie; fixedExtraTotal += cost; costItemsHtml += `<li><span>Piemontese (x${nPie}):</span> <span>+ € ${cost.toFixed(2)} (Fisso)</span></li>`; }
+                    else if(ch==='Cremonese'){ fixedExtraTotal += EX.cr; costItemsHtml += `<li><span>Cremonese:</span> <span>+ € ${EX.cr.toFixed(2)} (Fisso)</span></li>`; }
+                    else if(ch==='Serratura'){ fixedExtraTotal += EX.se; costItemsHtml += `<li><span>Serratura:</span> <span>+ € ${EX.se.toFixed(2)} (Fisso)</span></li>`; }
+                    
+                    if (cop) {
+                        let linearMeters = ((hi * 2) + w) / 1000;
+                        let cCost = 0; let cLabel = "";
+                        if(cop === 'alu') { cCost = linearMeters * 30; cLabel = "Coprifilo Alluminio"; }
+                        if(cop === 'pvc') { cCost = linearMeters * 19; cLabel = "Coprifilo PVC"; }
+                        fixedExtraTotal += cCost;
+                        costItemsHtml += `<li><span>${cLabel} (${linearMeters.toFixed(2)}ml):</span> <span>+ € ${cCost.toFixed(2)} (Fisso)</span></li>`;
+                    }
+
+                    if(doS){ let costoSmontRiga = mqR * C_SM; costItemsHtml += `<li class="service-row"><span>Smontaggio (${mqR.toFixed(2)}mq):</span> <span>€ ${costoSmontRiga.toFixed(2)} (Vedi Totali)</span></li>`; }
+                    costItemsHtml += `</ul>`;
+                    let unitTotal = (pricePerMq * mqF) + fixedExtraTotal;
+                    let lineTotal = unitTotal * qty;
+
+                    const sp=r.querySelector('.misura-int').value; const mo=r.querySelector('.is-mono').checked; 
+                    let dm=""; if(sp) dm+=`<br>Spalletta: ${sp}`; if(mo) dm+=`<br>Monoblocco: SI`;
+                    if(doS){totMqS+=(mqR * qty);totPz += qty;} totInf+=lineTotal;
+                    let mqDisplay = mqF.toFixed(2); if(mqR < 1.30) mqDisplay += "<br><small class='text-orange'>(Min 1.30)</small>";
+                    
+                    h+=`<tr><td class="text-center">${i+1}</td><td class="text-center" style="font-weight:bold; font-size:1.1em;">${qty}</td><td><b>${r.querySelector('.pos').value}</b></td><td><strong>${r.querySelector('.tipo').value} ${w}x${hi}mm</strong><br>${descText}<br>${dm}${costItemsHtml}</td><td class="text-right" style="vertical-align:top;">${mqDisplay}</td><td class="text-right" style="vertical-align:bottom; font-size:1.1em;"><strong>€ ${lineTotal.toFixed(2)}</strong></td></tr>`;
+                });
+                
+                const cSm=totMqS*C_SM; let cSma=totPz>0?(totPz>5?C_SH:C_SL):0; 
+                let tSma=totPz>0?`Smaltimento (${totPz} pz)`:"Smaltimento"; 
+                const cDi=document.getElementById('checkDiscarica').checked?C_D:0; const cSo=document.getElementById('checkSopralluogo').checked?C_SOPR:0;
+                let imp = totInf + cSm + cSma + cDi + cSo + cTrasporto + cTrabattello - sc; if(imp<0)imp=0; 
+                const vIva=imp*iva; const tot=imp+vIva;
+                
+                document.getElementById('outTabellaBody').innerHTML = h; document.getElementById('outImpInfissi').innerText = "€ " + totInf.toFixed(2);
+                const sr=(id,v,t,l)=>{const e=document.getElementById(id);if(v>0){e.style.display='flex';document.getElementById(t).innerText="€ "+v.toFixed(2);if(l)document.getElementById('lblSmaltimento').innerText=l;}else{e.style.display='none';}};
+                sr('rowSmontaggio',cSm,'outSmontaggio'); sr('rowSmaltimento',cSma,'outSmaltimento',tSma); sr('rowDiscarica',cDi,'outDiscarica'); sr('rowSopralluogo',cSo,'outSopralluogo'); sr('rowTrasporto', cTrasporto, 'outTrasporto'); sr('rowTrabattello', cTrabattello, 'outTrabattello');
+                if(sc>0){document.getElementById('rowSconto').style.display='flex';document.getElementById('outSconto').innerText="- € "+sc.toFixed(2);} else document.getElementById('rowSconto').style.display='none';
+                document.getElementById('outTotaleImp').innerText="€ "+imp.toFixed(2); document.getElementById('outPercIva').innerText=(iva*100).toFixed(0); 
+                document.getElementById('outValoreIva').innerText="€ "+vIva.toFixed(2); document.getElementById('outGrandTotal').innerText="€ "+tot.toFixed(2);
+                if(hasOrient) { document.getElementById('orientableDisclaimer').style.display = 'block'; } else { document.getElementById('orientableDisclaimer').style.display = 'none'; }
+                
+                if(note) { 
+                    document.getElementById('outNoteInstallatoreBox').style.display = 'block'; 
+                    document.getElementById('outNoteInstallatoreText').innerText = note; 
+                } else {
+                    document.getElementById('outNoteInstallatoreBox').style.display = 'none';
+                }
+
+                if(fT) { document.getElementById('imgFirmaTecnicoRender').src = fT; document.getElementById('imgFirmaTecnicoRender').style.display='block'; }
+                if(fC) { document.getElementById('imgFirmaClienteRender').src = fC; document.getElementById('imgFirmaClienteRender').style.display='block'; }
+                
+                if(mode === 'anteprima') return;
+
+                inviaDatiAlDatabase({ nPrev: nPrev, cliente: cliente, telefono: telefono, email: email, indirizzo: indirizzoResidenza + " | " + indirizzoCantiere, totale: tot.toFixed(2), tipo: "Preventivo", note: note });
+                createPdf(targetDiv, fileName, telefono, email);
+            } 
+            else if (tipo === 'tecnico') {
+                targetDiv = 'techRenderArea'; fileName = `SchedaTecnica_${cliente}.pdf`;
+                document.getElementById('schedaTecnicaContainer').style.display = 'block';
+                if(logoSrc) document.getElementById('renderLogoTech').src = logoSrc;
+                document.getElementById('techClienteFull').innerText = cliente;
+                document.getElementById('techResidenzaFull').innerText = indirizzoResidenza;
+                document.getElementById('techCantiereFull').innerText = indirizzoCantiere;
+                document.getElementById('techTelFull').innerText = telefono;
+                document.getElementById('techEmailFull').innerText = email;
+                const isRalExtra = document.getElementById('checkRalExtra').checked;
+                document.getElementById('techRalFull').innerText = ral + (isRalExtra ? " (Fuori Std)" : "");
+                if(note) { document.getElementById('techNoteBox').style.display = 'block'; document.getElementById('techNoteText').innerText = note; }
+                let html = "";
+                rows.forEach((r, i) => {
+                    const qty = parseInt(r.querySelector('.qty').value) || 1;
+                    const w = parseFloat(r.querySelector('.w').value)||0, h_val = parseFloat(r.querySelector('.h').value)||0, ante = parseInt(r.querySelector('.ante').value)||1;
+                    const mano = r.querySelector('.mano').value || "ND", install = r.querySelector('.installazione').value, aper = r.querySelector('.apertura').value;
+                    let valTravRaw = r.querySelector('.traverso').value, traverso = parseFloat(valTravRaw); if(isNaN(traverso) || traverso === 0) { traverso = 0; }
+                    const lam = r.querySelector('.lamelle').value, ch = r.querySelector('.chiusura').value;
+                    const isMono = r.querySelector('.is-mono').checked, sp = r.querySelector('.misura-int').value;
+                    let monoTxt = isMono ? "SI" : "NO", spallaTxt = sp ? sp : "-";
+                    let prodW = w, prodH = h_val, diff = "";
+                    if(aper === 'Scorrevole Interno Muro') { prodW = w + 60; prodH = h_val; diff = "+60 L / +0 H (Int. Muro)"; } 
+                    else if (aper === 'Scorrevole Esterno Muro') { prodW = w + 60; prodH = h_val + 30; diff = "+60 L / +30 H (Est. Muro)"; } 
+                    else { if(install.includes("Telaio")) { prodW-=10; prodH-=5; diff="-10 L / -5 H (Telaio)"; } else { prodW+=20; prodH+=5; diff="+20 L / +5 H (Muro)"; } }
+                    
+                    let sashes = "", travLine = "";
+                    if(traverso > 0 && h_val > 0) { let pct = (traverso / h_val) * 100; if(pct < 5) pct = 5; if(pct > 95) pct = 95; travLine = `<div class="tech-traverso" style="bottom:${pct}%"></div>`; }
+                    
+                    let extraGraphic = "";
+                    if(lam === 'Sportello Alla Genovese') {
+                        extraGraphic = '<div style="position:absolute; bottom:15px; left:15%; width:70%; height:25%; border:2px dashed #000; background:rgba(255,255,255,0.7); z-index:4; display:flex; align-items:center; justify-content:center; font-size:0.6em; font-weight:bold;">GENOVESE</div>';
+                    }
+
+                    if(aper.includes('Scorrevole')) { sashes = `<div class="schematic-sash" style="border:1px solid #000">${SVG_S}${travLine}${extraGraphic}</div>`; } 
+                    else { if(ante === 1) sashes = `<div class="schematic-sash">${mano==='Dx'?SVG_L:SVG_R}${travLine}${extraGraphic}</div>`; else if(ante === 2) sashes = `<div class="schematic-sash">${SVG_R}${travLine}${extraGraphic}</div><div class="schematic-sash">${SVG_L}${travLine}${extraGraphic}</div>`; else for(let k=0;k<ante;k++) sashes += `<div class="schematic-sash" style="background:#eee">${travLine}</div>`; }
+                    
+                    let ratio = w > 0 ? h_val / w : 1, dW = 100, dH = dW * ratio; if(dH > 120) { dH = 120; dW = dH / ratio; }
+                    let chDisplay = ch; if(ch === 'Piemontese') { let nPie = parseInt(r.querySelector('.num-piemontesi').value) || 2; chDisplay += ` (x${nPie})`; }
+                    
+                    html += `<div class="tech-card"><div class="tech-card-header"><span>POS: ${r.querySelector('.pos').value}</span><span style="font-size:0.8em;">#${i+1} (Q.tà: ${qty})</span></div><div class="tech-measures-row"><div class="measure-box rilievo"><span class="measure-lbl">RILIEVO (L x H)</span><span class="measure-val" style="color:#555;">${w} x ${h_val}</span></div><div class="measure-box produzione"><span class="measure-lbl">PRODUZIONE (L x H)</span><span class="measure-val">${prodW} x ${prodH}</span><div style="font-size:0.7em; margin-top:2px;">${diff}</div></div></div><div class="tech-drawing-area"><div class="schematic-window" style="width:${dW}px; height:${dH}px">${sashes}</div></div><table class="tech-info-table"><tr><td class="tech-key">TIPOLOGIA</td><td class="tech-val">PERSIANA ${r.querySelector('.tipo').value.toUpperCase()} ${ante} Ante</td></tr><tr><td class="tech-key">APERTURA</td><td class="tech-val">${aper}</td></tr><tr><td class="tech-key">MANO</td><td class="tech-val">${mano}</td></tr><tr><td class="tech-key">INSTALLAZ.</td><td class="tech-val">${install}</td></tr><tr><td class="tech-key">TRAVERSO</td><td class="tech-val">${traverso>0?traverso+' mm':'NO'}</td></tr><tr><td class="tech-key">LAMELLE</td><td class="tech-val">${lam}</td></tr><tr><td class="tech-key">CHIUSURA</td><td class="tech-val">${chDisplay}</td></tr><tr><td class="tech-key">NOTE</td><td class="tech-val" style="font-weight:normal;">Spalletta: ${spallaTxt} | Mono: ${monoTxt}</td></tr></table></div>`;
+                });
+                document.getElementById('techGridBody').innerHTML = html;
+                inviaDatiAlDatabase({ nPrev: nPrev, cliente: cliente, telefono: telefono, email: email, indirizzo: indirizzoResidenza + " | " + indirizzoCantiere, totale: "N/A", tipo: "Scheda Tecnica", note: note });
+                createPdf(targetDiv, fileName, telefono, email);
+            }
+        }
+
+        // --- SALVATAGGIO PDF OTTIMIZZATO (JPEG 0.8 + A4 SLICING) ---
+        function createPdf(elementId, fileName, phone, email) {
+            const { jsPDF } = window.jspdf;
+            const element = document.getElementById(elementId);
+            
+            // Forza una larghezza fissa per coerenza
+            element.style.width = '1000px'; 
+
+            html2canvas(element, { 
+                scale: 2, 
+                useCORS: true,
+                backgroundColor: '#ffffff' // Assicura sfondo bianco per JPEG
+            }).then(canvas => {
+                // USA JPEG INVECE DI PNG PER RISPARMIARE SPAZIO (0.8 quality = ottimo compromesso)
+                const imgData = canvas.toDataURL('image/jpeg', 0.8);
+                
+                // Misure standard A4 in mm
+                const pdfWidth = 210; 
+                const pdfHeight = 297;
+                
+                // Calcola l'altezza immagine sul PDF
+                const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+                
+                // Crea PDF A4
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                
+                let heightLeft = imgHeight;
+                let position = 0;
+
+                // Prima pagina
+                pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeight);
+                heightLeft -= pdfHeight;
+
+                // Pagine successive (Taglio automatico)
+                while (heightLeft > 0) {
+                    position = heightLeft - imgHeight;
+                    pdf.addPage();
+                    pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeight);
+                    heightLeft -= pdfHeight;
+                }
+
+                pdf.save(fileName);
+                
+                // Gestione condivisione
+                const msg = encodeURIComponent(`Gentile cliente, in allegato il documento richiesto.`);
+                if(document.getElementById('btnShareWhatsapp')) document.getElementById('btnShareWhatsapp').onclick = () => window.open(`https://wa.me/${phone}?text=${msg}`, '_blank');
+                if(document.getElementById('btnShareEmail')) document.getElementById('btnShareEmail').onclick = () => window.open(`mailto:${email}?subject=Documento%20Attila%20Group&body=${msg}`, '_blank');
+                
+                // UI Reset
+                document.getElementById('loadingBar').style.display = 'none';
+                document.getElementById('finalImageArea').style.display = 'block';
+                document.getElementById('preventivoContainer').style.display = 'none';
+                document.getElementById('schedaTecnicaContainer').style.display = 'none';
+                document.getElementById('posaContainer').style.display = 'none';
+                document.getElementById('finalImageArea').scrollIntoView({behavior: 'smooth'});
+            });
+        }
+        
+        // --- DB SEND ---
+        function inviaDatiAlDatabase(payload) {
+            if(GOOGLE_SCRIPT_URL.includes("INSERISCI_QUI")) { console.warn("Database non configurato."); return; }
+            fetch(GOOGLE_SCRIPT_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+            .then(() => { console.log("Dati inviati al database!"); }).catch(err => console.error("Errore invio DB:", err));
+        }
+
+        // FIRME
+        let activeSignatureType = null;
+        const modal = document.getElementById('signatureModal');
+        const canvas = document.getElementById('fullscreenCanvas');
+        const ctx = canvas.getContext('2d');
+        let isDrawing = false;
+        function openSignatureModal(type) { activeSignatureType = type; modal.style.display = 'flex'; canvas.width = document.querySelector('.signature-canvas-container').offsetWidth; canvas.height = document.querySelector('.signature-canvas-container').offsetHeight; ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.clearRect(0, 0, canvas.width, canvas.height); }
+        function closeSignatureModal() { modal.style.display = 'none'; }
+        function clearModalCanvas() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
+        function saveSignature() { 
+            const d = canvas.toDataURL('image/png'); 
+            if (activeSignatureType === 'tecnico') { document.getElementById('previewTecnico').src = d; document.getElementById('previewTecnico').style.display='block'; document.getElementById('dataFirmaTecnico').value = d; } 
+            else { document.getElementById('previewCliente').src = d; document.getElementById('previewCliente').style.display='block'; document.getElementById('dataFirmaCliente').value = d; } 
+            closeSignatureModal(); 
+        }
+        const getCoords = (e) => { const r = canvas.getBoundingClientRect(); return { x: (e.touches?e.touches[0].clientX:e.clientX) - r.left, y: (e.touches?e.touches[0].clientY:e.clientY) - r.top }; };
+        canvas.onmousedown = (e) => { isDrawing = true; const c = getCoords(e); ctx.beginPath(); ctx.moveTo(c.x, c.y); };
+        canvas.onmousemove = (e) => { if (!isDrawing) return; const c = getCoords(e); ctx.lineTo(c.x, c.y); ctx.stroke(); };
+        canvas.onmouseup = () => isDrawing = false;
+        canvas.ontouchstart = (e) => { isDrawing = true; const c = getCoords(e); ctx.beginPath(); ctx.moveTo(c.x, c.y); };
+        canvas.ontouchmove = (e) => { if (!isDrawing) return; e.preventDefault(); const c = getCoords(e); ctx.lineTo(c.x, c.y); ctx.stroke(); };
+        canvas.ontouchend = () => isDrawing = false;
+
+        document.getElementById('btnPreventivo').addEventListener('click', () => generaPDF('preventivo'));
+        document.getElementById('btnTecnico').addEventListener('click', () => generaPDF('tecnico'));
+        document.getElementById('btnPosa').addEventListener('click', () => generaPDF('posa'));
+        
+        // Inizializza con una finestra vuota
+        aggiungiFinestra();
+    </script>
+</body>
+</html>
